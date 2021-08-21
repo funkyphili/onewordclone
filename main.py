@@ -4,7 +4,8 @@ from flask_socketio import SocketIO, emit, disconnect
 import jellyfish
 
 import random
-#TODO css styling
+
+# TODO css styling
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -45,8 +46,7 @@ def disconnect_request():
     # when the callback function is invoked we know that the message has been
     # received and it is safe to disconnect
     emit('my_response',
-         {'data': 'Disconnected!', 'count': session['receive_count']},
-         callback=can_disconnect)
+          'Disconnected!',callback=can_disconnect)
     try:
         del connected_clients[request.sid]
     except KeyError:
@@ -63,34 +63,34 @@ def name_setzen(name):
     global connected_clients
     connected_clients[request.sid] = name
 
-    emit('my_response', {'data': "dein Name: " + connected_clients[request.sid], 'count': 0})
+    emit('my_response',  "dein Name: " + connected_clients[request.sid])
     connected_clients_string = ""
     for key in connected_clients:
         connected_clients_string = connected_clients_string + connected_clients[key] + ", "
-
+    connected_clients_string = connected_clients_string[:-2]
     emit('connected_players', connected_clients_string, broadcast=True)
 
 
 @socketio.event
 def start():
-    global Schreiber, connected_clients, Rater, word,wordlist
+    global Schreiber, connected_clients, Rater, word, wordlist
     if len(connected_clients) < 3:
-        emit('my_response', {'data': "zu wenig spieler", 'count': 0}, broadcast=True)
+        emit('my_response', "zu wenig spieler", broadcast=True)
         return
 
-    emit('my_response', {'data': "spiel startet", 'count': 0}, broadcast=True)
+    emit('my_response' "spiel startet", broadcast=True)
     emit('input_visibility', "start_off", broadcast=True)
     word = wordlist[random.randrange(0, len(wordlist) + 1)]
     wordlist.remove(word)
     Schreiber = list(connected_clients.keys())
     random.shuffle(Schreiber)
     Rater = Schreiber.pop()
-
+    emit('my_response', connected_clients[Rater] +" muss raten", broadcast=True)
     for person in Schreiber:
-        emit('my_response', {'data': "das Wort ist: " + word, 'count': 0}, room=person)
+        emit('my_response',  "das Wort ist: " + word, room=person)
         emit('input_visibility', "clue_on", room=person)
 
-    emit('my_response', {'data': "du musst raten", 'count': 0}, room=Rater)
+    emit('my_response', "du musst raten", room=Rater)
 
 
 @socketio.event
@@ -100,22 +100,19 @@ def my_word(message):
     session['receive_count'] = session.get('receive_count', 0) + 1
     Hinweise[request.sid] = message["data"]
     # print(Hinweise)
-    emit('my_response',
-         {'data': "abgegeben " + message['data'], 'count': session['receive_count']})
+    emit('my_response',"abgegeben " + message['data'])
     emit('input_visibility', "clue_off")
-    #print(len(Hinweise))
-    #print(len(Schreiber))
+    # print(len(Hinweise))
+    # print(len(Schreiber))
     if len(Hinweise) == len(Schreiber):
-        emit('my_response', {'data': "Hinweise gesammelt", 'count': 0}, broadcast=True)
+        emit('my_response', "Hinweise gesammelt", broadcast=True)
         emit('input_visibility', "guess_on", room=Rater)
 
         cleaned_prompts = hinweise_checken(Hinweise.values())
         if cleaned_prompts:
-            emit('my_response', {'data': "die Hinweise sind: " + hinweise_checken(Hinweise.values()), 'count': 0},
-                     broadcast=True)
+            emit('my_response',  "die Hinweise sind: " + hinweise_checken(Hinweise.values()),broadcast=True)
         else:
-            emit('my_response', {'data': "die Hinweise sind: " + "keine Hinweise Übrig :(", 'count': 0},
-                     broadcast=True)
+            emit('my_response',  "die Hinweise sind: " + "keine Hinweise Übrig :(", broadcast=True)
 
 
 @socketio.event
@@ -123,9 +120,10 @@ def my_guess(message):
     global word, Schreiber, Rater, Hinweise
     distance = jellyfish.damerau_levenshtein_distance(word, message["data"])
     if distance <= 2:
-        emit('my_response', {'data': "du hast: " + word + " richtig geraten", 'count': 0}, broadcast=True)
+        emit('my_response',  "du hast: " + word + " richtig geraten", broadcast=True)
     else:
-        emit('my_response', {'data': " leider falsch, du hast geraten:" + message["data"] +  " , das wort war aber: " + word, 'count': 0}, broadcast=True)
+        emit('my_response',
+             " leider falsch, du hast geraten:" + message["data"] + " , das wort war aber: " + word, broadcast=True)
     # emit('restart',broadcast=True)
     emit("input_visibility", "clue_off", broadcast=True)
     emit("input_visibility", "guess_off", broadcast=True)
@@ -154,7 +152,6 @@ def hinweise_checken(raw_words):
         if jellyfish.damerau_levenshtein_distance(word, guess) <= 2:
             return None
 
-    neu = True
     while raw_words:
         neu = True
         current_guess = raw_words.pop(0)

@@ -21,7 +21,7 @@
 
 
             socket.on('my_response', function(msg, cb) {
-                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                $('#log').append('<br>' + $('<div/>').text(msg).html());
                 if (cb)
                     cb();
             });
