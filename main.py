@@ -99,18 +99,28 @@ def my_word(message):
     string = ""
     session['receive_count'] = session.get('receive_count', 0) + 1
     Hinweise[request.sid] = message["data"]
-    # print(Hinweise)
-    emit('my_response',"abgegeben " + message['data'])
     emit('input_visibility', "clue_off")
-    # print(len(Hinweise))
-    # print(len(Schreiber))
-    if len(Hinweise) == len(Schreiber):
+
+    emit('my_response',"abgegeben: " + message['data'])
+    Schreiber.remove(request.sid)
+    not_submitted_string = ""
+    for person in Schreiber:
+        not_submitted_string += (connected_clients[person]) + ", "
+    not_submitted_string = not_submitted_string[:-2]
+    if Schreiber:
+        emit('my_response', "noch nicht abgegeben haben: " + not_submitted_string, broadcast=True)
+
+
+
+
+
+    if not Schreiber:
         emit('my_response', "Hinweise gesammelt", broadcast=True)
         emit('input_visibility', "guess_on", room=Rater)
 
         cleaned_prompts = hinweise_checken(Hinweise.values())
         if cleaned_prompts:
-            emit('my_response',  "die Hinweise sind: " + hinweise_checken(Hinweise.values()),broadcast=True)
+            emit('my_response',  "die Hinweise sind: " + cleaned_prompts,broadcast=True)
         else:
             emit('my_response',  "die Hinweise sind: " + "keine Hinweise Übrig :(", broadcast=True)
 
@@ -156,7 +166,7 @@ def hinweise_checken(raw_words):
         neu = True
         current_guess = raw_words.pop(0)
         for guess in raw_words:
-            if jellyfish.damerau_levenshtein_distance(current_guess, guess) < 2:
+            if jellyfish.damerau_levenshtein_distance(current_guess, guess) < 2 or current_guess in guess:
                 neu = False
                 raw_words.remove(guess)
 
