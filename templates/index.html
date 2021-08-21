@@ -1,0 +1,122 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <title>Flask-SocketIO Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf-8">
+
+        $(document).ready(function() {
+            // The connection URL has the following format, relative to the current page:
+            //     http[s]://<domain>:<port>[/<namespace>]
+            var socket = io();
+
+            socket.on('connect', function() {
+                socket.emit('my_event', {data: 'I\'m connected!'});
+                document.getElementById('emit').style.display ="none"
+                document.getElementById('raten').style.display ="none"
+            });
+
+
+            socket.on('my_response', function(msg, cb) {
+                $('#log').append('<br>' + $('<div/>').text('Received #' + msg.count + ': ' + msg.data).html());
+                if (cb)
+                    cb();
+            });
+            socket.on('connected_players', function(msg) {
+                $('#playerlog').append('<br>' + $('<div/>').text('connected are:' + msg).html());
+            });
+
+            socket.on('input_visibility', function(msg)  {
+                if (msg === "clue_on") {
+                document.getElementById('emit').style.display ="block"; }
+                 if (msg === "clue_off") {
+                document.getElementById('emit').style.display ="none"; }
+                if (msg === "guess_on") {
+                document.getElementById('raten').style.display = 'block'; }
+                if (msg === "guess_off") {
+                document.getElementById('raten').style.display = 'none'; }
+                if (msg === "start_on") {
+                document.getElementById('startbutton').style.display = 'block'; }
+                if (msg === "start_off") {
+                document.getElementById('startbutton').style.display = 'none'; }
+             });
+
+            $('form#emit').submit(function(event) {
+                socket.emit('my_word', {data: $('#emit_data').val()});
+                document.getElementById('emit').reset();
+                return false;
+            });
+            $('form#raten').submit(function(event) {
+                socket.emit('my_guess', {data: $('#raten_data').val()});
+                document.getElementById('raten').reset();
+                return false;
+            });
+            $('form#startbutton').submit(function(event) {
+                socket.emit('start');
+                return false;
+            });
+            $('form#disconnect').submit(function(event) {
+                socket.emit('disconnect_request');
+                return false;
+            });
+             $('form#name').submit(function(event) {
+                socket.emit('name_setzen',$('#emit_name').val());
+                document.getElementById('name').style.display = 'none';
+                return false;
+            });
+        });
+
+        function dellog(){
+            var div = document.getElementById("log");
+            if (div.childElementCount > 100){
+            div.removeChild(div.firstChild);
+            }
+         }
+
+        setInterval(dellog,1000);
+
+
+
+    </script>
+
+
+</head>
+
+<body>
+    <h1>nur eins </h1>
+<div id="wrapper">
+    <form id="name" method="POST" action='#' >
+        <input type="text" name="emit_name" id="emit_name" placeholder="dein Name">
+        <input type="submit" value="name">
+    </form>
+
+    <br><br><br>
+
+    <form id="emit" method="POST" action='#'>
+        <input type="text" name="emit_data" id="emit_data" placeholder="das Wort">
+        <input type="submit" value="senden">
+    </form>
+
+   <form id="raten" method="POST" action='#' style="display: none;">
+        <input type="text" name="raten_data" id="raten_data" placeholder="deine Vermutung">
+        <input type="submit" value="senden">
+    </form>
+
+
+    <br>
+     <form id="startbutton" method="POST" action='#'>
+        <input type="submit" value="starten">
+    </form>
+</div>
+
+
+    <h2>Nachrichten:</h2>
+
+    <div id="log" style="float:left;"></div>
+     <div id="playerlog" style="float:left;"></div>
+</body>
+</html>
+

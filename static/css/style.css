@@ -1,0 +1,36 @@
+body {
+	font: 15px;px arial;
+	color: #222;
+	text-align:left;
+	padding:35px; }
+
+ #log, #playerlog{
+	display:flex;
+	flex-direction: column-reverse;
+	height:400px;
+	max-height: 600px;
+	overflow:auto;
+    font:20px arial;
+	margin:0 left;
+	padding-bottom:25px;
+	background:#EBF4FB;
+	width:500px;
+	max-width:500px;
+	border:1px solid #ACD8F0; }
+
+
+	#wrapper{
+		display:block;
+		height:200px;
+		overflow:auto;
+		font:20px arial;
+		margin:0 left;
+		padding-bottom:25px;
+		background:#EBF4FB;
+		width:300px;
+		max-width:300px;
+		border:1px solid #ACD8F0; }
+
+	
+
+h1 { font:50px arial;}
