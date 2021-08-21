@@ -109,12 +109,13 @@ def my_word(message):
         emit('my_response', {'data': "Hinweise gesammelt", 'count': 0}, broadcast=True)
         emit('input_visibility', "guess_on", room=Rater)
 
-
-        emit('my_response', {'data': "die Hinweise sind: " + hinweise_checken(Hinweise.values()), 'count': 0},
-                 broadcast=True)
-
-        # emit('my_response', {'data': "die Hinweise sind: " + "keine Hinweise Übrig :(", 'count': 0},
-        #          broadcast=True)
+        cleaned_prompts = hinweise_checken(Hinweise.values())
+        if cleaned_prompts:
+            emit('my_response', {'data': "die Hinweise sind: " + hinweise_checken(Hinweise.values()), 'count': 0},
+                     broadcast=True)
+        else:
+            emit('my_response', {'data': "die Hinweise sind: " + "keine Hinweise Übrig :(", 'count': 0},
+                     broadcast=True)
 
 
 @socketio.event
