@@ -6,6 +6,7 @@ import jellyfish
 import random
 
 # TODO css styling
+# TODO rewrite as class to get rid of global variables
 
 # Set this variable to "threading", "eventlet" or "gevent" to test the
 # different async modes, or leave it set to None for the application to choose
@@ -25,6 +26,7 @@ with open("words.txt", "r", encoding='utf-8') as filestream:
 word = ""
 connected_clients = {}
 Schreiber = ()
+Schreiber_geraten = ()
 Rater = ""
 Hinweise = {}
 random.seed()
@@ -46,7 +48,7 @@ def disconnect_request():
     # when the callback function is invoked we know that the message has been
     # received and it is safe to disconnect
     emit('my_response',
-          'Disconnected!',callback=can_disconnect)
+         'Disconnected!', callback=can_disconnect)
     try:
         del connected_clients[request.sid]
     except KeyError:
@@ -60,7 +62,7 @@ def test_disconnect():
 
 @socketio.event
 def name_setzen(name):
-    global connected_clients
+    global connected_clients, Schreiber
     connected_clients[request.sid] = name
 
     emit('my_response',  "dein Name: " + connected_clients[request.sid])
@@ -69,11 +71,11 @@ def name_setzen(name):
         connected_clients_string = connected_clients_string + connected_clients[key] + ", "
     connected_clients_string = connected_clients_string[:-2]
     emit('connected_players', connected_clients_string, broadcast=True)
-
+    Schreiber = list(connected_clients.keys())
 
 @socketio.event
 def start():
-    global Schreiber, connected_clients, Rater, word, wordlist
+    global Schreiber, connected_clients, Rater, word, wordlist, Schreiber_geraten
     if len(connected_clients) < 3:
         emit('my_response', "zu wenig spieler", broadcast=True)
         return
@@ -82,10 +84,9 @@ def start():
     emit('input_visibility', "start_off", broadcast=True)
     word = wordlist[random.randrange(0, len(wordlist) + 1)]
     wordlist.remove(word)
-    Schreiber = list(connected_clients.keys())
-    random.shuffle(Schreiber)
-    Rater = Schreiber.pop()
-    emit('my_response', connected_clients[Rater] +" muss raten", broadcast=True)
+    Rater = Schreiber.pop(0)
+    Schreiber_geraten = Schreiber.copy()
+    emit('my_response', connected_clients[Rater] + " muss raten", broadcast=True)
     for person in Schreiber:
         emit('my_response',  "das Wort ist: " + word, room=person)
         emit('input_visibility', "clue_on", room=person)
@@ -95,32 +96,27 @@ def start():
 
 @socketio.event
 def my_word(message):
-    global Hinweise, Schreiber, Rater
-    string = ""
-    session['receive_count'] = session.get('receive_count', 0) + 1
+    global Hinweise, Schreiber, Rater,Schreiber_geraten
+    #session['receive_count'] = session.get('receive_count', 0) + 1
     Hinweise[request.sid] = message["data"]
     emit('input_visibility', "clue_off")
 
-    emit('my_response',"abgegeben: " + message['data'])
-    Schreiber.remove(request.sid)
+    emit('my_response', "abgegeben: " + message['data'])
+    Schreiber_geraten.remove(request.sid)
     not_submitted_string = ""
-    for person in Schreiber:
+    for person in Schreiber_geraten:
         not_submitted_string += (connected_clients[person]) + ", "
     not_submitted_string = not_submitted_string[:-2]
-    if Schreiber:
+    if Schreiber_geraten:
         emit('my_response', "noch nicht abgegeben haben: " + not_submitted_string, broadcast=True)
 
-
-
-
-
-    if not Schreiber:
+    else:
         emit('my_response', "Hinweise gesammelt", broadcast=True)
         emit('input_visibility', "guess_on", room=Rater)
 
         cleaned_prompts = hinweise_checken(Hinweise.values())
         if cleaned_prompts:
-            emit('my_response',  "die Hinweise sind: " + cleaned_prompts,broadcast=True)
+            emit('my_response',  "die Hinweise sind: " + cleaned_prompts, broadcast=True)
         else:
             emit('my_response',  "die Hinweise sind: " + "keine Hinweise Übrig :(", broadcast=True)
 
@@ -138,7 +134,7 @@ def my_guess(message):
     emit("input_visibility", "clue_off", broadcast=True)
     emit("input_visibility", "guess_off", broadcast=True)
     emit('input_visibility', "start_on", broadcast=True)
-    Schreiber = ()
+    Schreiber.append(Rater)
     Rater = ""
     Hinweise = {}
 

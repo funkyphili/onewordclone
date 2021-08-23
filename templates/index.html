@@ -26,7 +26,7 @@
                     cb();
             });
             socket.on('connected_players', function(msg) {
-                $('#playerlog').append('<br>' + $('<div/>').text('connected are:' + msg).html());
+                $('#playerlog').append('<br>' + $('<div/>').text('verbunden sind:' + msg).html());
             });
 
             socket.on('input_visibility', function(msg)  {
